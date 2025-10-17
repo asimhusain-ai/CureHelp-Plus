@@ -26,6 +26,13 @@ Made with ❤️ By: **Asim Husain** https://www.asimhusain.dev
 
 ---
 
+## Accessibility
+- **Custom Domain** www.curehelplus.me
+- **Docker Image** https://hub.docker.com/r/asimhusain/myapp
+- **Azure ContainerApp** https://curehelplus.yellowforest-948fb34f.centralindia.azurecontainerapps.io
+
+---
+
 ### Key Features
 
 - 🧠 **Multi-Disease Risk Prediction** - Diabetes, Heart Disease, Fever, Anemia
@@ -35,6 +42,8 @@ Made with ❤️ By: **Asim Husain** https://www.asimhusain.dev
 - 📋 **Patient Profile Management** - Secure health record storage
 - 📄 **PDF Report Generation** - Comprehensive health reports
 - 💊 **Clinical Guidance** - Prevention measures and medication suggestions
+- 🐳 **Dockerized Deployment** - Easy setup with Docker image and container
+- 🌐 **Azure & Custom Domain Deployment** - Accessible via cloud and personalized domain
 
 
 ---
@@ -59,6 +68,10 @@ Made with ❤️ By: **Asim Husain** https://www.asimhusain.dev
 4.  **Predict Risk:** Click on the "Predict" button to get your risk assessment.
 5.  **View Results:** The results will be displayed with interactive gauges and charts, along with AI-powered recommendations.
 6.  **Generate Report:** Go to the "Report" tab to view a summary of all your predictions and download a consolidated PDF report.
+7.  **Docker Usage:** Pull the Docker image from [Docker Hub](https://hub.docker.com/r/asimhusain/myapp) and run it locally.
+      - docker pull asimhusain/myapp
+      - docker run -p 8501:8501 asimhusain/myapp
+8.  **Cloud Deployment:** Access the deployed app on Azure Container Apps here or via the custom domain www.curehelplus.me
 
 
 ## Performance Metrics
@@ -103,6 +116,7 @@ I welcome contributions from the community!
 - Python 3.8 or higher
 - pip (Python package manager)
 - Git
+- Docker (optional, for containerized deployment)
 
 ### Installation
 
@@ -115,3 +129,13 @@ I welcome contributions from the community!
    ```bash
    streamlit run app.py
    - http://localhost:8501
+   
+3. **Run Using Docker (Optional)**
+   ```bash
+   docker pull asim123/myapp
+   docker run -p 8501:8501 asim123/myapp
+   - Open http://localhost:8501 in your browser.
+
+4. **Cloud Access**
+- Azure Container Apps Deployment: https://curehelplus.yellowforest-948fb34f.centralindia.azurecontainerapps.io
+- Custom Domain: www.curehelplus.me
