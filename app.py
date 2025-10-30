@@ -15,25 +15,8 @@ from datetime import datetime
 
 st.set_page_config(page_title="CureHelp+ ", layout="wide")
 
-# Initialize all session state 
-def initialize_session_state():
-    """Initialize all session state variables"""
-    if "page" not in st.session_state:
-        st.session_state.page = "landing"
-    if "predictions" not in st.session_state:
-        st.session_state.predictions = {}
-    if "current_profile" not in st.session_state:
-        st.session_state.current_profile = None
-    if "current_profile_id" not in st.session_state:
-        st.session_state.current_profile_id = None
-    if "user_profiles" not in st.session_state:
-        st.session_state.user_profiles = []
-        profile_manager.load_profiles()
-
-
-initialize_session_state()
-    
-st.markdown("""
+# Cache CSS as a constant to avoid re-rendering (OPTIMIZATION)
+CUSTOM_CSS = """
 <style>
 
     .main-chat-container {
@@ -195,7 +178,26 @@ st.markdown("""
         transform: translateY(-1px);
     }
 </style>
-""", unsafe_allow_html=True)
+"""
+
+# Initialize all session state 
+def initialize_session_state():
+    """Initialize all session state variables - Optimized to check once"""
+    # Check if already initialized to avoid redundant operations (OPTIMIZATION)
+    if "initialized" not in st.session_state:
+        st.session_state.page = "landing"
+        st.session_state.predictions = {}
+        st.session_state.current_profile = None
+        st.session_state.current_profile_id = None
+        st.session_state.user_profiles = []
+        st.session_state.initialized = True
+        profile_manager.load_profiles()
+
+
+initialize_session_state()
+    
+# Apply CSS once (OPTIMIZATION)
+st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
 
 # Navigation Functions with Auto-save
 def go_to_patient_details():

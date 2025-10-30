@@ -1,5 +1,7 @@
 import streamlit as st
+from functools import lru_cache
 
+@lru_cache(maxsize=1)
 def get_hospitals_data():
     """Returns a list of hospital data"""
     return [
@@ -131,6 +133,7 @@ def get_hospitals_data():
         }
     ]
 
+@lru_cache(maxsize=1)
 def get_doctors_data():
     """Returns a list of doctor data with different specializations"""
     return [

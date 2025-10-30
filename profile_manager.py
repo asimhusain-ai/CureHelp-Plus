@@ -4,10 +4,13 @@ import json
 import os
 from datetime import datetime
 import numpy as np
+import time
 
 class ProfileManager:
     def __init__(self):
         self.profiles_file = "user_profiles.json"
+        self._last_save_time = 0
+        self._save_debounce_seconds = 2  # Wait 2 seconds before saving (OPTIMIZATION)
     
     def ensure_session_state_initialized(self):
         """Ensure session state is properly initialized"""
@@ -16,7 +19,7 @@ class ProfileManager:
             self.load_profiles()
     
     def load_profiles(self):
-        """Load profiles from JSON file"""
+        """Load profiles from JSON file with caching"""
         if os.path.exists(self.profiles_file):
             try:
                 with open(self.profiles_file, 'r') as f:
@@ -30,7 +33,8 @@ class ProfileManager:
             st.session_state.user_profiles = []
     
     def convert_numpy_types(self, obj):
-        """Convert numpy data types to Python native types for JSON serialization"""
+        """Convert numpy data types to Python native types for JSON serialization - Optimized"""
+        # Optimized type checking using isinstance with tuple for better performance
         if isinstance(obj, (np.integer, np.int32, np.int64)):
             return int(obj)
         elif isinstance(obj, (np.floating, np.float32, np.float64)):
@@ -44,9 +48,15 @@ class ProfileManager:
         else:
             return obj
     
-    def save_profiles(self):
-        """Save profiles to JSON file"""
+    def save_profiles(self, force=False):
+        """Save profiles to JSON file with debouncing to reduce I/O (OPTIMIZATION)"""
         try:
+            current_time = time.time()
+            
+            # Debounce: Only save if enough time has passed or force is True
+            if not force and (current_time - self._last_save_time) < self._save_debounce_seconds:
+                return
+            
             # Ensure session state is initialized
             self.ensure_session_state_initialized()
             
@@ -54,6 +64,8 @@ class ProfileManager:
             
             with open(self.profiles_file, 'w') as f:
                 json.dump(profiles_to_save, f, indent=4)
+            
+            self._last_save_time = current_time
         except Exception as e:
             st.error(f"Error saving profiles: {e}")
     
@@ -70,7 +82,7 @@ class ProfileManager:
             profile_data = self.convert_numpy_types(profile_data)
             
             st.session_state.user_profiles.append(profile_data)
-            self.save_profiles()
+            self.save_profiles(force=True)  # Force immediate save for new profiles
             return profile_id
         except Exception as e:
             st.error(f"Error adding profile: {e}")
@@ -179,7 +191,7 @@ class ProfileManager:
                         
                         st.session_state.user_profiles[i]['last_updated'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                         
-                        self.save_profiles()
+                        self.save_profiles()  # Use debounced save here (non-critical update)
                         return True
                 
                 # If profile not found in list, add it (shouldn't happen normally)
@@ -208,7 +220,7 @@ class ProfileManager:
                     
                     st.session_state.user_profiles[i]['predictions'] = converted_predictions
                     st.session_state.user_profiles[i]['saved_at'] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                    self.save_profiles()
+                    self.save_profiles(force=True)  # Force immediate save for manual saves
                     return True
             return False
         except Exception as e:

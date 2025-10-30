@@ -5,6 +5,9 @@ for each disease based on risk percentages. All recommendations are detailed,
 actionable, and relevant to the disease and risk level.
 """
 
+from functools import lru_cache
+
+@lru_cache(maxsize=128)
 def fetch_gemini_recommendations(disease: str, risk: float):
     """
     Returns prevention measures and medications for a given disease
