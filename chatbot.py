@@ -84,8 +84,8 @@ def preprocess_datasets(precautions_df, symptoms_df, faq_df, augmented_df):
         return precautions_df, symptoms_df, faq_df, augmented_df
 
 def find_question_answer(question, faq_df):
-    """Find the best matching question in FAQ dataset"""
-    if faq_df is None:
+    """Find the best matching question in FAQ dataset - Optimized with early exit"""
+    if faq_df is None or faq_df.empty:
         return None
     
     question_clean = question.lower().strip()
@@ -93,6 +93,7 @@ def find_question_answer(question, faq_df):
     # Improved question matching
     best_match = None
     best_score = 0
+    threshold = 0.4
     
     # Common question patterns
     question_patterns = [
@@ -106,9 +107,16 @@ def find_question_answer(question, faq_df):
     # Check if it's a symptom question
     is_symptom_question = any(re.search(pattern, question_clean) for pattern in question_patterns)
     
+    # Pre-compute question words once (OPTIMIZATION)
+    question_words = set(question_clean.split())
+    disease_terms = [term for term in re.findall(r'[a-zA-Z]+', question_clean) if len(term) > 4]
+    
     for idx, row in faq_df.iterrows():
         faq_question = str(row['question']).lower() if pd.notna(row['question']) else ""
-        faq_answer = str(row['answer']).lower() if pd.notna(row['answer']) else ""
+        
+        # Skip empty questions early (OPTIMIZATION)
+        if not faq_question:
+            continue
         
         score = 0
         
@@ -117,7 +125,6 @@ def find_question_answer(question, faq_df):
             score += 0.3
         
         # Word overlap scoring
-        question_words = set(question_clean.split())
         faq_words = set(faq_question.split())
         
         if question_words and faq_words:
@@ -125,19 +132,22 @@ def find_question_answer(question, faq_df):
             score += overlap / len(question_words)
         
         # Boost score for exact disease matches
-        disease_terms = re.findall(r'[a-zA-Z]+', question_clean)
         for term in disease_terms:
-            if len(term) > 4 and term in faq_question:
+            if term in faq_question:
                 score += 0.2
         
         if score > best_score:
             best_score = score
             best_match = row
+            
+            # Early exit if we find a very good match (OPTIMIZATION)
+            if best_score > 0.9:
+                break
     
-    return best_match if best_score > 0.4 else None
+    return best_match if best_score > threshold else None
 
 def predict_disease_from_symptoms(symptoms_list, augmented_df):
-    """Predict disease based on symptoms using cosine similarity"""
+    """Predict disease based on symptoms using cosine similarity - Optimized with vectorization"""
     if augmented_df is None:
         return None
     
@@ -145,28 +155,29 @@ def predict_disease_from_symptoms(symptoms_list, augmented_df):
         # Get symptom columns (all columns except diseases and diseases_clean)
         symptom_columns = [col for col in augmented_df.columns if col not in ['diseases', 'diseases_clean']]
         
+        # Build query vector
         query_vector = np.zeros(len(symptom_columns))
-        
         for symptom in symptoms_list:
             symptom_clean = symptom.lower().strip().replace(' ', '_')
             if symptom_clean in symptom_columns:
                 idx = symptom_columns.index(symptom_clean)
                 query_vector[idx] = 1
         
-        # Calculate cosine similarity
-        similarities = []
-        for idx, row in augmented_df.iterrows():
-            try:
-                disease_vector = row[symptom_columns].values.astype(float)
-                similarity = cosine_similarity([query_vector], [disease_vector])[0][0]
-                similarities.append((row['diseases'], similarity, disease_vector))
-            except:
-                continue
+        # Vectorized cosine similarity calculation (OPTIMIZED)
+        # Extract all disease vectors at once instead of iterating
+        disease_matrix = augmented_df[symptom_columns].values.astype(float)
         
-        # Get best match
-        if similarities:
-            best_match = max(similarities, key=lambda x: x[1])
-            return best_match
+        # Calculate similarities for all diseases at once
+        similarities_scores = cosine_similarity([query_vector], disease_matrix)[0]
+        
+        # Find the best match
+        if len(similarities_scores) > 0:
+            best_idx = np.argmax(similarities_scores)
+            best_disease = augmented_df.iloc[best_idx]['diseases']
+            best_score = similarities_scores[best_idx]
+            best_vector = disease_matrix[best_idx]
+            return (best_disease, best_score, best_vector)
+        
         return None
     except Exception as e:
         st.warning(f"Error in disease prediction: {e}")
